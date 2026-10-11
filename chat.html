@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101827">
+<title>EL ARQUI · Mi Oficina IA</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#111a2d;--line:#26344e;--text:#edf3ff;--muted:#9eacc5;--blue:#a8c6ff;--green:#7fe0bb;--red:#ff9292}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 10% 0%,#1a2a49,transparent 45%),var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh;display:grid;place-items:center;padding:16px}
+main{width:min(780px,100%);height:min(850px,94vh);min-height:520px;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:20px;background:#101827;overflow:hidden}
+header{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}.logo{display:grid;place-items:center;width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#a5c6ff,#8be0c2);color:#0b1424;font-size:22px;font-weight:900}.sub{color:var(--muted);font-size:13px}h1{font-size:20px;margin:0}.status{margin-left:auto;color:var(--green);font-size:12px}.messages{padding:20px;flex:1;overflow:auto;display:flex;flex-direction:column;gap:14px}.msg{max-width:88%;padding:12px 14px;border:1px solid var(--line);border-radius:15px;white-space:pre-wrap;overflow-wrap:anywhere}.assistant{align-self:flex-start;background:#172238}.user{align-self:flex-end;background:#1a3150;border-color:#315078}.err{color:var(--red)}form{padding:14px;border-top:1px solid var(--line);display:flex;gap:10px;background:#0c1423}textarea{flex:1;resize:none;min-height:48px;max-height:150px;background:#101827;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit}button{border:0;border-radius:12px;padding:0 18px;background:var(--blue);color:#0b1424;font-weight:800;font:inherit;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.hint{padding:0 18px 12px;color:var(--muted);font-size:11px}a{color:var(--blue)}@media(max-width:500px){body{padding:0}main{height:100dvh;min-height:0;border-radius:0;border:0}.msg{max-width:95%}header{padding:14px}}
+</style>
+</head>
+<body>
+<main>
+<header><div class="logo">A</div><div><h1>EL ARQUI</h1><div class="sub">Asistente de Mi Oficina IA</div></div><div class="status">● API preparada</div></header>
+<section class="messages" id="messages" aria-live="polite"><div class="msg assistant">Hola, soy EL ARQUI. Ya tengo una interfaz de chat lista para conectarse al servicio de IA. Envíame tu primera consulta.</div></section>
+<form id="chat-form"><textarea id="message" maxlength="12000" required placeholder="Escribe tu consulta…" aria-label="Tu mensaje"></textarea><button id="send" type="submit">Enviar</button></form>
+<div class="hint">No compartas contraseñas ni datos sensibles. Las respuestas de IA pueden contener errores; verifica lo importante.</div>
+</main>
+<script>
+(()=>{'use strict';
+const form=document.getElementById('chat-form'),input=document.getElementById('message'),send=document.getElementById('send'),messages=document.getElementById('messages');
+function add(text,who,extra=''){const el=document.createElement('div');el.className='msg '+who+(extra?' '+extra:'');el.textContent=text;messages.appendChild(el);messages.scrollTop=messages.scrollHeight;return el}
+form.addEventListener('submit',async e=>{e.preventDefault();const message=input.value.trim();if(!message)return;add(message,'user');input.value='';send.disabled=true;send.textContent='…';const pending=add('Estoy pensando…','assistant');
+try{const res=await fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message,agent:'EL ARQUI',instructions:'Eres EL ARQUI, arquitecto de soluciones digitales e IA para Mi Oficina IA. Ayuda al usuario con planes concretos, programación, automatización y seguridad. Responde en español, paso a paso y de forma práctica. Nunca solicites ni reveles claves API. No afirmes que has cambiado código o sistemas salvo que realmente se haya ejecutado.'})});const data=await res.json().catch(()=>({}));pending.remove();if(!res.ok)throw new Error(data.error==='Server is missing OPENAI_API_KEY configuration.'?'Netlify no encuentra OPENAI_API_KEY. Revisa la variable de entorno y vuelve a desplegar.':data.error==='The AI provider request failed.'?'El proveedor de IA rechazó la solicitud (HTTP '+(data.status||res.status)+'). Verifica la clave, el saldo y los permisos de API.':'No se pudo conectar al servicio de IA (HTTP '+res.status+').');add(data.answer||'La IA no devolvió texto.','assistant')}catch(err){pending.remove();add(err.message||'Error de conexión. Revisa el despliegue de Netlify e inténtalo de nuevo.','assistant','err')}finally{send.disabled=false;send.textContent='Enviar';input.focus()}});
+input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();form.requestSubmit()}});
+})();
+</script>
+</body>
+</html>
